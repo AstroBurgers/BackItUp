@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"BackItUp/IO"
@@ -36,7 +36,6 @@ func listenProgress(progressCh <-chan IO.ProgressMsg) tea.Cmd {
 	}
 }
 
-// startBackup now accepts a progress channel to send progress updates
 func startBackup(cfg IO.Config, progressCh chan IO.ProgressMsg) tea.Cmd {
 	return func() tea.Msg {
 		now := time.Now()
@@ -85,11 +84,11 @@ func (m bModel) Update(msg tea.Msg) (bModel, tea.Cmd) {
 
 	case backupDoneMsg:
 		if msg.err != nil {
-			m.status = "❌ Backup failed"
+			m.status = "Backup failed"
 			m.failed = true
 			m.err = msg.err
 		} else {
-			m.status = "✅ Backup complete"
+			m.status = "Backup complete"
 			m.done = true
 		}
 

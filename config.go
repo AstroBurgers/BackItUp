@@ -9,10 +9,10 @@ import (
 )
 
 type cModel struct {
-	choices  []string         // items in the main menu
-	cursor   int              // which menu item our cursor is pointing at
-	selected map[int]struct{} // which menu items are selected
-	input    textinput.Model  // file extension input
+	choices  []string
+	cursor   int
+	selected map[int]struct{}
+	input    textinput.Model
 }
 
 func parseExtensions(input string) []string {

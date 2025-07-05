@@ -1,4 +1,4 @@
-package IO
+﻿package IO
 
 import (
 	"archive/zip"
@@ -9,8 +9,6 @@ import (
 	"strings"
 )
 
-// ProgressMsg is defined here just for convenience —
-// you can redefine it in main if you prefer to keep packages separate.
 type ProgressMsg struct {
 	Done  int
 	Total int
