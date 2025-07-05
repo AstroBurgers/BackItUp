@@ -1,19 +1,30 @@
 package main
 
-// These imports will be used later on the tutorial. If you save the file
-// now, Go might complain they are unused, but that's fine.
-// You may also need to run `go mod tidy` to download bubbletea and its
-// dependencies.
 import (
+	"BackItUp/IO"
 	textinput "github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"strings"
 )
 
 type cModel struct {
-	choices  []string         // items in the main menu
-	cursor   int              // which menu item our cursor is pointing at
-	selected map[int]struct{} // which menu items are selected
-	input    textinput.Model  // file extension input
+	choices   []string         // items in the main menu
+	cursor    int              // which menu item our cursor is pointing at
+	selected  map[int]struct{} // which menu items are selected
+	input     textinput.Model  // file extension input
+	statusMsg string
+}
+
+func parseExtensions(input string) []string {
+	parts := strings.Split(input, ",")
+	var result []string
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }
 
 func configModel() cModel {
@@ -41,16 +52,29 @@ func (m cModel) Update(msg tea.Msg) (cModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
+
+		case "ctrl+c", "q", "esc":
+			return m, tea.Cmd(func() tea.Msg { return backToMenuMsg{} })
+
 		case "enter":
-			// You could handle "submit" here, e.g., parse input.Value()
-			// For now, just return the model
-			return m, nil
+			extensions := parseExtensions(m.input.Value())
+			cfg := IO.Config{Extensions: extensions}
+
+			err := IO.SaveConfig(cfg)
+			if err != nil {
+				m.statusMsg = "❌ Failed to save config"
+				return m, nil
+			}
+
+			m.statusMsg = "✅ Config saved"
+			m.input.Reset()
+
+			// Go back to menu after saving
+			return m, tea.Cmd(func() tea.Msg { return backToMenuMsg{} })
 		}
 	}
 
-	// Let textinput handle the rest of the messages
+	// Let textinput handle everything else
 	m.input, cmd = m.input.Update(msg)
 	return m, cmd
 }
