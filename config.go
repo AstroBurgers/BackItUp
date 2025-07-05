@@ -2,17 +2,17 @@ package main
 
 import (
 	"BackItUp/IO"
-	textinput "github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"strings"
+	"time"
 )
 
 type cModel struct {
-	choices   []string         // items in the main menu
-	cursor    int              // which menu item our cursor is pointing at
-	selected  map[int]struct{} // which menu items are selected
-	input     textinput.Model  // file extension input
-	statusMsg string
+	choices  []string         // items in the main menu
+	cursor   int              // which menu item our cursor is pointing at
+	selected map[int]struct{} // which menu items are selected
+	input    textinput.Model  // file extension input
 }
 
 func parseExtensions(input string) []string {
@@ -54,7 +54,7 @@ func (m cModel) Update(msg tea.Msg) (cModel, tea.Cmd) {
 		switch msg.String() {
 
 		case "ctrl+c", "q", "esc":
-			return m, tea.Cmd(func() tea.Msg { return backToMenuMsg{} })
+			return m, func() tea.Msg { return backToMenuMsg{} }
 
 		case "enter":
 			extensions := parseExtensions(m.input.Value())
@@ -62,15 +62,13 @@ func (m cModel) Update(msg tea.Msg) (cModel, tea.Cmd) {
 
 			err := IO.SaveConfig(cfg)
 			if err != nil {
-				m.statusMsg = "❌ Failed to save config"
 				return m, nil
 			}
-
-			m.statusMsg = "✅ Config saved"
 			m.input.Reset()
 
-			// Go back to menu after saving
-			return m, tea.Cmd(func() tea.Msg { return backToMenuMsg{} })
+			return m, tea.Tick(time.Second/2, func(time.Time) tea.Msg {
+				return backToMenuMsg{}
+			})
 		}
 	}
 

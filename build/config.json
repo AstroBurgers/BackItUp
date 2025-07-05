@@ -1,7 +1,8 @@
 {
   "extensions": [
     ".ini",
-    ".xml",
-    ".json"
+    ".go",
+    ".json",
+    ".xml"
   ]
 }

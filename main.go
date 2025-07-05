@@ -5,6 +5,7 @@ package main
 // You may also need to run `go mod tidy` to download bubbletea and its
 // dependencies.
 import (
+	"BackItUp/IO"
 	"fmt"
 	"os"
 
@@ -26,7 +27,8 @@ type model struct {
 	choices     []string         // items in the main menu
 	cursor      int              // which menu item our cursor is pointing at
 	selected    map[int]struct{} // which menu items are selected
-	Config      cModel           // ← THIS is your cModel
+	Config      cModel
+	exec        bModel
 }
 
 func initialModel() model {
@@ -73,7 +75,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "enter", " ":
 				switch m.cursor {
 				case 0:
+					cfg, err := IO.LoadConfig()
+					if err != nil {
+						fmt.Println("Failed to load config:", err)
+						cfg = IO.Config{}
+					}
+					exec, cmd := newBModel(cfg)
+					m.exec = exec
+
 					m.currentView = viewExecution
+					return m, cmd
 				case 1:
 					m.currentView = viewConfigEditor
 				}
@@ -89,8 +100,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case viewExecution:
-		// TODO: Implement execution.Update logic here
-		return m, nil
+		var cmd tea.Cmd
+		m.exec, cmd = m.exec.Update(msg)
+		return m, cmd
 	}
 
 	return m, nil
@@ -121,7 +133,7 @@ func (m model) View() string {
 
 	case viewExecution:
 		// you can add execution view here later
-		return "Execution view (not implemented yet)"
+		return m.exec.View()
 
 	default:
 		return "Unknown view"
