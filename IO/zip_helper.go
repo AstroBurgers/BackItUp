@@ -1,4 +1,4 @@
-﻿package IO
+package io
 
 import (
 	"archive/zip"
@@ -14,8 +14,7 @@ type ProgressMsg struct {
 	Total int
 }
 
-// ZipWithExtensions ZipWithExtensionsProgress zips files from the current directory "."
-// filtering by allowed extensions, and sends progress updates to the channel.
+// ZipWithExtensions zips files from the current directory "." filtering by allowed extensions, and sends progress updates to the channel.
 func ZipWithExtensions(
 	outputZip string,
 	allowedExts []string,
@@ -27,24 +26,18 @@ func ZipWithExtensions(
 	if err != nil {
 		return err
 	}
-	defer func(outFile *os.File) {
-		err := outFile.Close()
-		if err != nil {
-
-		}
-	}(outFile)
+	defer outFile.Close()
 
 	zipWriter := zip.NewWriter(outFile)
-	defer func(zipWriter *zip.Writer) {
-		err := zipWriter.Close()
-		if err != nil {
-
-		}
-	}(zipWriter)
+	defer zipWriter.Close()
 
 	extMap := make(map[string]bool)
 	for _, ext := range allowedExts {
-		extMap[strings.ToLower(ext)] = true
+		ext = strings.ToLower(strings.TrimSpace(ext))
+		if !strings.HasPrefix(ext, ".") {
+			ext = "." + ext
+		}
+		extMap[ext] = true
 	}
 
 	// Step 1: Count total files matching the extensions
@@ -53,7 +46,8 @@ func ZipWithExtensions(
 		if err != nil || info.IsDir() {
 			return nil
 		}
-		if extMap[strings.ToLower(filepath.Ext(path))] {
+		ext := strings.ToLower(filepath.Ext(path))
+		if extMap[ext] {
 			totalFiles++
 		}
 		return nil
@@ -63,7 +57,7 @@ func ZipWithExtensions(
 	}
 
 	if totalFiles == 0 {
-		return fmt.Errorf("no files matching the specified extensions were found; backup not created")
+		return fmt.Errorf("no files matching the specified extensions were found, backup not created")
 	}
 
 	filesAdded := 0
@@ -73,7 +67,8 @@ func ZipWithExtensions(
 		if err != nil || info.IsDir() {
 			return nil
 		}
-		if !extMap[strings.ToLower(filepath.Ext(path))] {
+		ext := strings.ToLower(filepath.Ext(path))
+		if !extMap[ext] {
 			return nil
 		}
 

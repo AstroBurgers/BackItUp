@@ -1,7 +1,7 @@
-﻿package main
+package tui
 
 import (
-	"BackItUp/IO"
+	"BackItUp/io"
 	"fmt"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type bModel struct {
+type backupModel struct {
 	status      string
 	done        bool
 	failed      bool
@@ -18,14 +18,16 @@ type bModel struct {
 	filesTotal  int
 	progressBar progress.Model
 	spinner     spinner.Model
-	progressCh  chan IO.ProgressMsg
+	progressCh  chan io.ProgressMsg
 }
 
 type backupDoneMsg struct {
 	err error
 }
 
-func listenProgress(progressCh <-chan IO.ProgressMsg) tea.Cmd {
+type backToMenuMsg struct{}
+
+func listenProgress(progressCh <-chan io.ProgressMsg) tea.Cmd {
 	return func() tea.Msg {
 		msg, ok := <-progressCh
 		if !ok {
@@ -36,24 +38,24 @@ func listenProgress(progressCh <-chan IO.ProgressMsg) tea.Cmd {
 	}
 }
 
-func startBackup(cfg IO.Config, progressCh chan IO.ProgressMsg) tea.Cmd {
+func startBackup(cfg io.Config, progressCh chan io.ProgressMsg) tea.Cmd {
 	return func() tea.Msg {
 		now := time.Now()
 		timestamp := now.Format("2006-01-02_15-04-05")
 		zipName := fmt.Sprintf("backitup_%s.zip", timestamp)
 
-		err := IO.ZipWithExtensions(zipName, cfg.Extensions, progressCh)
+		err := io.ZipWithExtensions(zipName, cfg.Extensions, progressCh)
 		return backupDoneMsg{err: err}
 	}
 }
 
-func newBModel(cfg IO.Config) (bModel, tea.Cmd) {
+func newBackupModel(cfg io.Config) (backupModel, tea.Cmd) {
 	prog := progress.New(progress.WithDefaultGradient())
 	spin := spinner.New()
 	spin.Spinner = spinner.Line
-	progressCh := make(chan IO.ProgressMsg)
-	m := bModel{
-		status:      "🔄 Starting backup...",
+	progressCh := make(chan io.ProgressMsg)
+	m := backupModel{
+		status:      "Starting backup...",
 		progressBar: prog,
 		spinner:     spin,
 		progressCh:  progressCh,
@@ -67,16 +69,16 @@ func newBModel(cfg IO.Config) (bModel, tea.Cmd) {
 	return m, cmd
 }
 
-func (m bModel) Init() tea.Cmd {
+func (m backupModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m bModel) Update(msg tea.Msg) (bModel, tea.Cmd) {
+func (m backupModel) Update(msg tea.Msg) (backupModel, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 
-	case IO.ProgressMsg:
+	case io.ProgressMsg:
 		m.filesDone = msg.Done
 		m.filesTotal = msg.Total
 		m.status = fmt.Sprintf("Zipping file %d of %d...", m.filesDone, m.filesTotal)
@@ -105,7 +107,7 @@ func (m bModel) Update(msg tea.Msg) (bModel, tea.Cmd) {
 	return m, cmd
 }
 
-func (m bModel) View() string {
+func (m backupModel) View() string {
 	s := "Back It Up | Execution\n\n"
 	s += m.spinner.View() + " " + m.status + "\n\n"
 

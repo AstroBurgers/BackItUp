@@ -1,4 +1,4 @@
-package IO
+package io
 
 import (
 	"encoding/json"
@@ -11,14 +11,18 @@ type Config struct {
 
 const configFile = "config.json"
 
+func Default() Config {
+	return Config{Extensions: []string{".txt", ".md"}}
+}
+
 func LoadConfig() (Config, error) {
 	var cfg Config
 
 	file, err := os.ReadFile(configFile)
 	if err != nil {
-		// If file doesn't exist, return empty config
+		// If file doesn't exist, return default config
 		if os.IsNotExist(err) {
-			return cfg, nil
+			return Default(), nil
 		}
 		return cfg, err
 	}
